@@ -14,7 +14,7 @@ const VoiceQuery = ({ onTranscriptChange }) => {
   const recognitionRef = useRef(null);
 
   useEffect(() => {
-    // TASK: Detect unsupported browsers
+    // Detect unsupported browsers
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
       setIsSupported(false);
@@ -24,13 +24,12 @@ const VoiceQuery = ({ onTranscriptChange }) => {
     recognitionRef.current = new SpeechRecognition();
     const recognition = recognitionRef.current;
 
-    // TASK: Support English and Indian languages via lang setting
-    // Maps your app language to Speech API codes
+    // Support English and Indian languages via lang setting
     const langMap = { en: 'en-IN', hi: 'hi-IN', bn: 'bn-IN', ta: 'ta-IN' };
     recognition.lang = langMap[i18n.language] || 'en-US';
     
-    recognition.interimResults = true; // TASK: Live transcription
-    recognition.continuous = false;    // TASK: Auto-stop on silence
+    recognition.interimResults = true; // Live transcription
+    recognition.continuous = false;    // Auto-stop on silence
 
     recognition.onresult = (event) => {
       const current = Array.from(event.results)
@@ -38,7 +37,6 @@ const VoiceQuery = ({ onTranscriptChange }) => {
         .join('');
       
       setTranscript(current);
-      // Send the text back to the parent (ScanPage)
       if (onTranscriptChange) onTranscriptChange(current);
     };
 
@@ -63,7 +61,7 @@ const VoiceQuery = ({ onTranscriptChange }) => {
   return (
     <div className="w-full mt-4">
       <div className="relative">
-        {/* TASK: Live transcript display & manual editing */}
+        {/*Live transcript display & manual editing */}
         <textarea
           value={transcript}
           onChange={(e) => {
@@ -79,7 +77,6 @@ const VoiceQuery = ({ onTranscriptChange }) => {
           disabled={!isSupported}
         />
         
-        {/* TASK: Accessible microphone control with visible states */}
         <button
           onClick={toggleListening}
           disabled={!isSupported}
@@ -94,7 +91,7 @@ const VoiceQuery = ({ onTranscriptChange }) => {
         </button>
       </div>
 
-      {/* TASK: Graceful fallback message */}
+      {/* Fallback message */}
       {!isSupported && (
         <div className="flex items-center gap-2 mt-2 text-xs text-amber-500 font-medium">
           <AlertCircle size={14} />

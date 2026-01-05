@@ -26,6 +26,7 @@ function ScanPage() {
   const [error, setError] = useState(null);
   const [condition, setCondition] = useState("");
   const [followUpQuestion, setFollowUpQuestion] = useState("");
+  const [voiceAnswer, setVoiceAnswer] = useState(null);
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -44,6 +45,32 @@ function ScanPage() {
   //   reader.onloadend = () => setPreview(reader.result);
   //   reader.readAsDataURL(file);
   // };
+  const handleVoiceSubmit = async () => {
+    if (!followUpQuestion || !result) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      // send a JSON object, not FormData, because there is no NEW image
+      const res = await axios.post("https://nutb.onrender.com/analyze", {
+        condition: condition,
+        query: followUpQuestion,
+        foodName: result.food_name  
+      });
+
+      // Update the result state with the AI's answer to the voice query
+      setVoiceAnswer(res.data);
+      setFollowUpQuestion("");  
+    } catch (err) {
+      setError(
+        err.response?.data?.error ||
+        "Failed to get an answer from the assistant."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -80,7 +107,7 @@ function ScanPage() {
       formData.append("condition", condition);
 
       const res = await axios.post("https://nutb.onrender.com/analyze", formData);
-
+      
       setResult(res.data);
     } catch (err) {
       setError(
@@ -323,16 +350,43 @@ function ScanPage() {
                   </div>
                 )}
               </div>
+              <AnimatePresence>
+                {voiceAnswer && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`mt-7 p-6 rounded-2xl border-l-4 ${theme === 'dark' ? "bg-purple-500/10 border-purple-500" : "bg-purple-50 border-purple-500"}`}
+                  >
+                    <h3 className="text-s font-bold text-purple-400 uppercase mb-2">Here’s what we found</h3>
+                    {voiceAnswer.answer && (
+                      <p className="text-s italic opacity-70">{voiceAnswer.answer}</p>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
               <div className={`mt-6 pt-6 border-t ${theme === 'dark' ? "border-blue-400/10" : "border-blue-200"}`}>
-                <h3 className="text-xs font-bold text-blue-400 uppercase mb-3">Health Assistant</h3>
+                <h3 className="text-s font-bold text-blue-400 uppercase mb-3">Ask About This Food</h3>
                 <VoiceQuery onTranscriptChange={(text) => setFollowUpQuestion(text)} />
 
-                <button
-                  disabled={!followUpQuestion}
-                  className="w-full mt-3 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-sm transition-all disabled:opacity-50"
+                <motion.button
+                  onClick={handleVoiceSubmit}
+                  disabled={loading || !followUpQuestion}
+                  className={`w-full py-4 rounded-2xl text-base font-semibold text-white shadow-lg hover:shadow-xl disabled:opacity-70 disabled:cursor-not-allowed transition-all cursor-pointer flex items-center justify-center gap-2 ${theme === 'dark'
+                    ? "bg-gradient-to-r from-purple-800 to-indigo-500"
+                    : "bg-gradient-to-r from-purple-600 to-indigo-600"
+                    }`}
+                  whileHover={{ scale: !loading ? 1.05 : 1 }}
+                  whileTap={{ scale: !loading ? 0.95 : 1 }}
                 >
-                  Submit Query
-                </button>
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-6 h-6 animate-spin" />
+                      <span>{t("scan.thinking")}</span>
+                    </>
+                  ) : (
+                    <span>{t("scan.submitQuery")}</span>
+                  )}
+                </motion.button>
               </div>
             </motion.div>
           )}
